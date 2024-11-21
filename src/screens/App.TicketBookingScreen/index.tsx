@@ -9,7 +9,9 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { styles } from "./style";
 import Header from "../../components/header";
-
+import { useNavigation } from "@react-navigation/native"; // Thêm import useNavigation
+import { string } from "yup";
+import { StackNavigationProp } from "@react-navigation/stack";
 // Định nghĩa kiểu cho props của màn hình TicketBookingScreen
 interface TicketBookingScreenProps {
   route: {
@@ -32,18 +34,25 @@ interface SeatSelectionScreenParams {
 
 // Định nghĩa kiểu cho stack navigation
 export type RootStackParamList = {
-  TicketBookingScreen: undefined; // không cần tham số
-  SeatSelectionScreen: SeatSelectionScreenParams; // cần tham số
-  OtpScreen: { email: string }; // tham số cho OtpScreen\
+  TicketBookingScreen: undefined;
+  SeatSelectionScreen: { /* tripId: string */ trip: any };
+  OtpScreen: { email: string };
   LoginScreen: undefined;
+  ConfirmInformation: {
+    // Cập nhật kiểu tham số cho màn hình ConfirmInformation
+    selectedSeats: string[]; // Mảng các ghế đã chọn
+    trip: any; // Hoặc thay 'any' bằng kiểu dữ liệu thực tế của trip
+    seatCapacity: number; // Sức chứa ghế
+  };
 };
 
 const TicketBookingScreen: React.FC<TicketBookingScreenProps> = ({ route }) => {
   const { trips, selectedDay } = route.params;
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
       currency: "VND",
       minimumFractionDigits: 0,
     }).format(amount);
@@ -64,7 +73,9 @@ const TicketBookingScreen: React.FC<TicketBookingScreenProps> = ({ route }) => {
     const year = date.getFullYear(); // Năm hiện tại
     return `${hours}:${minutes} - ${day}/${month}/${year}`; // Trả về ngày giờ đầy đủ
   };
-
+  const handleSelectTrip = (/* tripId: string */ trip: any) => {
+    navigation.navigate("SeatSelectionScreen", { trip });
+  };
   return (
     <SafeAreaView style={styles.safeArea}>
       <Header title="Chọn tuyến xe" />
@@ -107,12 +118,7 @@ const TicketBookingScreen: React.FC<TicketBookingScreenProps> = ({ route }) => {
               Thời gian đến dự kiến: {formatDateTime(item.arrivalTime)}{" "}
             </Text>
             <Text style={styles.ticketPrice}>
-              Giá vé:{" "}
-              {formatCurrency(
-                item.route.distance *
-                  item.route.pricePerKM *
-                  item.bus.priceFactor
-              )}
+              Giá vé: {formatCurrency(item.price)} / ghế
             </Text>
             <Text style={styles.ticketType}>
               Loại xe: {item.bus.busTypeName}{" "}
@@ -124,7 +130,7 @@ const TicketBookingScreen: React.FC<TicketBookingScreenProps> = ({ route }) => {
             <Text style={styles.totalSeats}>id chuyến xe: {item._id}</Text>
             <TouchableOpacity
               style={styles.selectTripButton}
-              //onPress={() => handleSelectTrip(item.price)}
+              onPress={() => handleSelectTrip(item)} // Đặt hàm vào đúng vị trí
             >
               <Text style={styles.selectTripButtonText}>Chọn Chuyến</Text>
             </TouchableOpacity>

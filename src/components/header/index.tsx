@@ -21,10 +21,7 @@ const Header: React.FC<HeaderProps> = ({ title, onRightButtonPress }) => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.headerContainer}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
+        <TouchableOpacity onPress={() => navigation.goBack()}>
           <Icon name="chevron-back" size={24} color="black" />
         </TouchableOpacity>
 

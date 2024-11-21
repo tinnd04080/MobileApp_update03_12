@@ -13,10 +13,7 @@ export const styles = StyleSheet.create({
     paddingTop: Platform.OS === "android" ? 30 : 0, // Dành cho Android để tránh camera
     height: Platform.OS === "android" ? 80 : 60, // Điều chỉnh chiều cao tuỳ thuộc vào nền tảng
     backgroundColor: "#fff",
-    elevation: 4, // Đổ bóng cho header (Android)
-  },
-  backButton: {
-    paddingLeft: 8,
+    elevation: 2, // Đổ bóng cho header (Android)
   },
   rightButton: {
     paddingRight: 8,

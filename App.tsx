@@ -11,14 +11,36 @@ import TicketScreen from "./src/screens/app/Tickets";
 import NotificationScreen from "./src/screens/app/Notification";
 import ProfileScreen from "./src/screens/app/Profiles";
 import TicketBookingScreen from "./src/screens/App.TicketBookingScreen";
-import SeatSelectionScreen from "./src/screens/App.SeatSelectionScreen";
+import SeatSelectionScreen from "./src/screens/SeatSelectionScreen/SeatSelectionScreen";
 import PickupDropoffScreen from "./src/screens/App.PickupDropoffScreen";
 import PassengerInfoScreen from "./src/screens/App.PassengerInfoScreen";
 import PaymentScreen from "./src/screens/App.PaymentScreen";
 import TicketDetail from "./src/screens/app/Tickets/TicketDetail";
 import OtpScreen from "./src/screens/auth/OTP";
 import BankTransferScreen from "./src/screens/App.PaymentScreen/PaymentTransfer";
+import ConfirmInformation from "./src/screens/ConfirmInformationScreen/ConfirmInformationScreen";
+// RootStackParamList.ts
+export type RootStackParamList = {
+  SplashScreen: undefined;
+  LoginScreen: undefined;
+  RegisterScreen: undefined;
+  OtpScreen: { email: string }; // Ví dụ, truyền email vào màn hình OTP
+  MainTabs: undefined;
+  TicketBookingScreen: undefined;
+  SeatSelectionScreen: { tripId: string }; // Thêm kiểu cho tham số tripId
+  PickupDropoffScreen: undefined;
+  PassengerInfoScreen: undefined;
+  PaymentScreen: undefined;
+  BankTransferScreen: undefined;
+};
 
+// BottomTabParamList.ts
+export type BottomTabParamList = {
+  Home: undefined;
+  Ticket: undefined;
+  Notification: undefined;
+  Profile: undefined;
+};
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -66,7 +88,7 @@ const App: React.FC = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="SplashScreen"
+        initialRouteName="SplashScreen" //SplashScreen
         screenOptions={{ headerShown: false }}
       >
         <Stack.Screen name="SplashScreen" component={SplashScreen} />
@@ -83,6 +105,10 @@ const App: React.FC = () => {
           component={SeatSelectionScreen}
         />
         <Stack.Screen
+          name="ConfirmInformation"
+          component={ConfirmInformation} // Thêm màn hình ConfirmInformation vào đây
+        />
+        <Stack.Screen
           name="PickupDropoffScreen"
           component={PickupDropoffScreen}
         />
@@ -91,7 +117,6 @@ const App: React.FC = () => {
           component={PassengerInfoScreen}
         />
         <Stack.Screen name="PaymentScreen" component={PaymentScreen} />
-        {/* <Stack.Screen name="TicketDetail" component={TicketDetail} /> */}
         <Stack.Screen
           name="BankTransferScreen"
           component={BankTransferScreen}
