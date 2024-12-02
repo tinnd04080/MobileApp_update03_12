@@ -1,6 +1,6 @@
 import { StyleSheet } from "react-native";
 const buttonColor = "#E88D67";
-const backgroundColor = "#F3F7EC";
+const backgroundColor = "#fff";
 const textColor = "#005C78";
 const inputBackgroundColor = "#f0f0f0";
 const borderColor = "#ccc";

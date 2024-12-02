@@ -11,16 +11,16 @@ export const styles = StyleSheet.create({
     borderRadius: 10,
   },
   seatContainer24: {
-    padding: 10,
     margin: 20,
+    backgroundColor: "#f8f8f8", // Cái này cho 36 chỗ ngồi
     elevation: 1,
-    backgroundColor: "#e8e8e8", // Cái này cho 24 chỗ ngồi
+    borderRadius: 10,
   },
   seatContainer16: {
-    padding: 10,
     margin: 20,
+    backgroundColor: "#f8f8f8", // Màu nền cho 36 chỗ ngồi
     elevation: 1,
-    backgroundColor: "#d8d8d8", // Cái này cho 16 chỗ ngồi
+    borderRadius: 10,
   },
   blockContainer36: {
     flexDirection: "row",
@@ -30,6 +30,7 @@ export const styles = StyleSheet.create({
   blockContainer24: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "stretch", // Đảm bảo chiều cao của đường kẻ đồng bộ với các khối
   },
   blockContainer16: {
     flexDirection: "column",
@@ -39,6 +40,11 @@ export const styles = StyleSheet.create({
     width: "48%",
     marginBottom: 10,
   },
+  block16: {
+    width: "60%",
+    marginBottom: 10,
+  },
+
   verticalDivider: {
     width: 2, // Chiều rộng của đường kẻ
     backgroundColor: "#ccc", // Màu sắc của đường kẻ
@@ -104,17 +110,19 @@ export const styles = StyleSheet.create({
   },
 
   driverText: {
-    color: "#000000",
+    color: "#FEF3E2",
     fontSize: 16,
     fontWeight: "bold",
   },
   grayBox: {
-    backgroundColor: "#D9D9D9", // Màu xám
+    backgroundColor: "#62825D", // Màu xám
     marginHorizontal: 10,
     marginVertical: 10,
     justifyContent: "center",
     alignItems: "center",
     height: 50,
+    borderRadius: 5,
+    flexDirection: "row-reverse",
   },
 
   colorLegendContainer: {
@@ -208,5 +216,26 @@ export const styles = StyleSheet.create({
     flexDirection: "row", // Sắp xếp các phần tử theo chiều dọc
     alignItems: "flex-start", // Căn lề trái
     width: "100%", // Đảm bảo chiếm hết chiều rộng
+  },
+  driverSeat: {
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#62825D",
+    padding: 10,
+    marginRight: 5,
+    borderRadius: 5,
+    width: 95,
+  },
+  driverSeatText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#FEF3E2",
+  },
+  emptySpace: {
+    width: "25%",
+    height: 50,
+  },
+  icon: {
+    marginLeft: 10, // Khoảng cách giữa icon và text
   },
 });

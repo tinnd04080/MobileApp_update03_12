@@ -3,6 +3,7 @@ import { StyleSheet, Platform } from "react-native";
 export const styles = StyleSheet.create({
   safeArea: {
     backgroundColor: "white",
+    elevation: 5,
   },
   headerContainer: {
     flexDirection: "row",

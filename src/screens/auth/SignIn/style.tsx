@@ -1,7 +1,7 @@
 import { StyleSheet } from "react-native";
 
 const buttonColor = "#E88D67";
-const backgroundColor = "#F3F7EC";
+const backgroundColor = "#fff";
 const textColor = "#005C78";
 const inputBackgroundColor = "#f0f0f0";
 const borderColor = "#ccc";
@@ -72,5 +72,14 @@ export const styles = StyleSheet.create({
     color: "#007BFF",
     textAlign: "center",
     fontSize: 14,
+  },
+  logo: {
+    width: 400, // Kích thước của logo
+    height: 250, // Kích thước của logo
+    resizeMode: "contain", // Đảm bảo logo không bị méo
+  },
+  logoContainer: {
+    alignItems: "center", // Căn giữa logo
+    /* backgroundColor: "#000", */
   },
 });

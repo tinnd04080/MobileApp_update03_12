@@ -12,6 +12,7 @@ import Header from "../../components/header";
 import { useNavigation } from "@react-navigation/native"; // Thêm import useNavigation
 import { string } from "yup";
 import { StackNavigationProp } from "@react-navigation/stack";
+import { FontAwesome } from "@expo/vector-icons"; // Import FontAwesome icons từ Expo
 // Định nghĩa kiểu cho props của màn hình TicketBookingScreen
 interface TicketBookingScreenProps {
   route: {
@@ -44,6 +45,25 @@ export type RootStackParamList = {
     trip: any; // Hoặc thay 'any' bằng kiểu dữ liệu thực tế của trip
     seatCapacity: number; // Sức chứa ghế
   };
+  CreateticketsScreen: {
+    // Thông tin màn hình thành công
+    ticket: {
+      code: string; // Mã vé
+      customerName: string; // Tên khách hàng
+      customerPhone: string; // Số điện thoại khách hàng
+      trip: {
+        route: {
+          startPoint: string; // Điểm bắt đầu
+          endPoint: string; // Điểm kết thúc
+        };
+      };
+      boardingPoint: string; // Điểm đón
+      dropOffPoint: string; // Điểm trả
+      seatNumber: string[]; // Danh sách ghế
+      totalAmount: number; // Tổng tiền
+      status: string; // Trạng thái vé
+    };
+  };
 };
 
 const TicketBookingScreen: React.FC<TicketBookingScreenProps> = ({ route }) => {
@@ -57,13 +77,16 @@ const TicketBookingScreen: React.FC<TicketBookingScreenProps> = ({ route }) => {
       minimumFractionDigits: 0,
     }).format(amount);
   };
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString); // Tạo đối tượng Date từ chuỗi ISO
-    const hours = date.getUTCHours().toString().padStart(2, "0"); // Lấy giờ và đảm bảo 2 chữ số
-    const minutes = date.getUTCMinutes().toString().padStart(2, "0"); // Lấy phút và đảm bảo 2 chữ số
-    return `${hours}:${minutes}`; // Trả về giờ và phút
-  };
 
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const hours = date.getHours().toString().padStart(2, "0"); // Lấy giờ hiện tại
+    const minutes = date.getMinutes().toString().padStart(2, "0"); // Lấy phút hiện tại
+    const day = date.getDate().toString().padStart(2, "0"); // Ngày hiện tại
+    const month = (date.getMonth() + 1).toString().padStart(2, "0"); // Tháng hiện tại
+    const year = date.getFullYear(); // Năm hiện tại
+    return `${hours}:${minutes}`; // Trả về ngày giờ đầy đủ
+  };
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
     const hours = date.getHours().toString().padStart(2, "0"); // Lấy giờ hiện tại
@@ -80,21 +103,21 @@ const TicketBookingScreen: React.FC<TicketBookingScreenProps> = ({ route }) => {
     <SafeAreaView style={styles.safeArea}>
       <Header title="Chọn tuyến xe" />
       <View style={styles.dateDisplayContainer}>
+        <Text style={styles.routeDisplayText}>
+          Tuyến xe: {trips[0].route.startProvince}
+          {" đến "}
+          {trips[0].route.endProvince}
+        </Text>
         <Text style={styles.currentDateText}>
           Ngày khởi hành:{" "}
           {new Date(trips[0].departureTime).toLocaleDateString("vi-VN")}
         </Text>
-        <Text style={styles.routeDisplayText}>
-          Tuyến xe: {trips[0].route.startProvince} -{" "}
-          {trips[0].route.endProvince}
-        </Text>
-
-        <TouchableOpacity
+        {/*   <TouchableOpacity
           style={styles.customButton}
           onPress={() => setShowDatePicker(true)}
         >
           <Text style={styles.customButtonText}>Chọn ngày khác</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
       {showDatePicker && (
@@ -111,26 +134,112 @@ const TicketBookingScreen: React.FC<TicketBookingScreenProps> = ({ route }) => {
         data={trips}
         renderItem={({ item }) => (
           <View style={styles.ticket}>
-            <Text style={styles.ticketInfo}>
-              Giờ khởi hành: {formatTime(item.departureTime)}{" "}
-            </Text>
-            <Text style={styles.ticketInfo}>
-              Thời gian đến dự kiến: {formatDateTime(item.arrivalTime)}{" "}
-            </Text>
-            <Text style={styles.ticketPrice}>
-              Giá vé: {formatCurrency(item.price)} / ghế
-            </Text>
-            <Text style={styles.ticketType}>
-              Loại xe: {item.bus.busTypeName}{" "}
-            </Text>
-            <Text style={styles.availableSeats}>Ghế trống: </Text>
-            <Text style={styles.totalSeats}>
-              Tổng số ghế: {item.bus.seatCapacity}
-            </Text>
-            <Text style={styles.totalSeats}>id chuyến xe: {item._id}</Text>
+            {/* Phần 1: Thông tin thời gian khởi hành, thời gian dự kiến đến và loại xe */}
+            <View style={styles.ticketInfoTop}>
+              {/* Khối chiều ngang 1 chứa các biểu tượng và đường kẻ dọc */}
+              <View style={styles.iconContainer}>
+                <FontAwesome name="bus" size={20} color="#006A67" />
+                <View style={styles.dividerTop} />
+                <FontAwesome name="map-marker" size={23} color="#F87A53" />
+              </View>
+
+              {/* Khối chiều ngang 2 chứa thông tin thời gian */}
+              <View style={styles.timeContainer}>
+                {/* <Text style={styles.ticketInfo}>
+                  <View></View>
+                  <Text>Bến xe: {item.route.startDistrict}</Text>
+                  <Text>Giờ khởi hành: {formatTime(item.departureTime)}</Text>
+                </Text>
+                <Text style={styles.ticketInfo}>
+                  Giờ đến dự kiến: {formatDateTime(item.arrivalTime)}
+                </Text> */}
+                <View style={styles.ticketInfo1}>
+                  <Text style={styles.District}>
+                    {item.route.startDistrict}
+                  </Text>
+                  <Text>
+                    <Text
+                      style={{
+                        fontWeight: "600",
+                        fontSize: 15,
+                        color: "#006A67",
+                      }}
+                    >
+                      Giờ khởi hành: {""}
+                    </Text>
+                    <Text
+                      style={{
+                        fontWeight: "700",
+                        fontSize: 17,
+                        color: "#006A67",
+                      }}
+                    >
+                      {formatTime(item.departureTime)}
+                    </Text>
+                  </Text>
+                </View>
+                <View style={styles.ticketInfo}>
+                  <Text style={styles.District}>
+                    {item.route.startDistrict}
+                  </Text>
+                  <Text>
+                    <Text
+                      style={{
+                        fontWeight: "600",
+                        fontSize: 15,
+                        color: "#D96542",
+                      }}
+                    >
+                      Dự kiến đến:{" "}
+                    </Text>
+                    <Text
+                      style={{
+                        fontWeight: "700",
+                        fontSize: 17,
+                        color: "#D96542",
+                      }}
+                    >
+                      {formatDateTime(item.arrivalTime)}
+                    </Text>
+                  </Text>
+                </View>
+              </View>
+            </View>
+            {/* Đường kẻ giữa hai phần */}
+            <View style={styles.divider}></View>
+
+            {/* Phần 2: Chia thành 2 phần theo chiều ngang */}
+            <View style={styles.ticketInfoBottom}>
+              {/* Phần 2.1: Ghế trống */}
+              <View style={styles.seatContainer}>
+                {/* Thông tin loại xe */}
+
+                <Text style={styles.availableSeats}>
+                  {item.bus ? item.bus.busTypeName : "Không có thông tin xe"}
+                </Text>
+                <Text style={styles.availableSeatsb}>
+                  Còn trống{" "}
+                  <Text style={{ color: "#D70000" }}>
+                    {item.availableSeats}
+                  </Text>{" "}
+                  chỗ
+                </Text>
+              </View>
+
+              {/* Phần 2.2: Giá vé */}
+              <View style={styles.priceContainer}>
+                <Text style={styles.ticketPriceTitle}>Giá vé:</Text>
+                <Text style={styles.ticketPriceNumber}>
+                  {formatCurrency(item.price)}Đ
+                </Text>
+              </View>
+            </View>
+
+            {/* Thông tin ID chuyến và nút chọn chuyến */}
+            {/* <Text style={styles.totalSeats}>id chuyến xe: {item._id}</Text> */}
             <TouchableOpacity
               style={styles.selectTripButton}
-              onPress={() => handleSelectTrip(item)} // Đặt hàm vào đúng vị trí
+              onPress={() => handleSelectTrip(item)}
             >
               <Text style={styles.selectTripButtonText}>Chọn Chuyến</Text>
             </TouchableOpacity>

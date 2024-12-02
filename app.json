@@ -6,20 +6,33 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "scheme": "CarBookingApp",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleUrl": "myapp://payment/success"
     },
     "android": {
       "package": "com.thanhtran.samle.carbooking",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "category": ["DEFAULT", "BROWSABLE"],
+          "data": {
+            "scheme": "myapp",
+            "host": "payment",
+            "pathPrefix": "/success"
+          }
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -29,8 +42,6 @@
         "projectId": "fc807c23-7d07-44a8-a90c-e51d8da9467c"
       }
     },
-    "plugins": [
-      "expo-localization"
-    ]
+    "plugins": ["expo-localization"]
   }
 }

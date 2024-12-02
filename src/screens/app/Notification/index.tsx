@@ -63,7 +63,7 @@ const NotificationScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header title="Notification" />
+      <Header title="Thông báo" />
       <FlashList
         data={notifications}
         renderItem={renderItem}

@@ -8,6 +8,18 @@ export const provinces = [
   "Quảng Ngãi",
   "Quảng Bình",
 ];
+export const payment = [
+  {
+    label: "Zalopay",
+    value: "ZALOPAY",
+    icon: require("../assets/logoZalopay.png"),
+  },
+  {
+    label: "Tại quầy",
+    value: "OFFLINEPAYMENT",
+    icon: require("../assets/logoPaymentOff.png"),
+  },
+];
 
 // popularRoutes.ts
 export const popularRoutes = [

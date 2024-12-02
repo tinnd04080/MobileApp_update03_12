@@ -14,6 +14,7 @@ import DateTimePickerModal from "react-native-modal-datetime-picker";
 import RNPickerSelect from "react-native-picker-select";
 import busRoute from "../../../services/BusRoutes/busRouteApi";
 import tripApi from "../../../services/Trips/tripApi";
+import { Picker } from "@react-native-picker/picker";
 interface HomeScreenProps {
   navigation: any;
 }
@@ -35,6 +36,13 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     }).start();
   }, []);
 
+  // Helper function: format date to dd-mm-yyyy
+  const formatDate = (date: Date): string => {
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const year = date.getFullYear().toString();
+    return `${day}-${month}-${year}`;
+  };
   // Handle date selection
   const handleConfirmDate = (date: Date) => {
     setDepartureDate(date);
@@ -42,7 +50,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   };
 
   // Handle search button press
-  const handleSearch = async () => {
+  /* const handleSearch = async () => {
     try {
       const response = await tripApi.getTripsByRoute(
         departure,
@@ -52,6 +60,36 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
       if (response && response.trips) {
         // In dữ liệu đã lấy được từ API ra console
+        console.log("Trips data fetched:", response.trips);
+        navigation.navigate("TicketBookingScreen", {
+          trips: response.trips,
+          selectedDay: departureDate,
+          departure: departure,
+          destination: destination,
+        });
+      } else {
+        Alert.alert("Không tìm thấy chuyến đi phù hợp.");
+      }
+    } catch (error) {
+      console.error("Lỗi khi tìm chuyến đi:", error);
+      Alert.alert("Có lỗi xảy ra. Vui lòng thử lại sau.");
+    }
+  }; */
+  const handleSearch = async () => {
+    if (!departure || !destination) {
+      Alert.alert("Vui lòng chọn điểm khởi hành và điểm đến.");
+      return;
+    }
+
+    try {
+      const formattedDate = formatDate(departureDate); // Chuyển định dạng ngày
+      const response = await tripApi.getTripsByRoute(
+        departure,
+        destination,
+        departureDate
+      );
+
+      if (response && response.trips) {
         console.log("Trips data fetched:", response.trips);
         navigation.navigate("TicketBookingScreen", {
           trips: response.trips,

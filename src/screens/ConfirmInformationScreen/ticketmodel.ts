@@ -10,7 +10,7 @@ export interface TicketData {
   dropOffPoint: string;
   discountCode?: string;
 }
-export const createTicket = async (data: TicketData, token: string) => {
+export const createTicket = async (data: TicketData, token: any) => {
   try {
     const response = await axiosClient.post(`/tickets/create`, data, {
       headers: {

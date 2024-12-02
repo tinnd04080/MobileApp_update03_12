@@ -6,6 +6,7 @@ import {
   ScrollView,
   TextInput,
   Alert,
+  Image,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage"; // Import AsyncStorage
 import authApi from "../../../services/Auth/authApi";
@@ -90,6 +91,12 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.logoContainer}>
+        <Image
+          source={require("../../../assets/logo.png")} // Thay đường dẫn với logo của bạn
+          style={styles.logo}
+        />
+      </View>
       <View style={styles.formContainer}>
         <Text style={styles.title}>Đăng Nhập</Text>
 
@@ -128,9 +135,9 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
 
         <Button title="Đăng Nhập" onPress={handleLogin} style={styles.button} />
 
-        <TouchableOpacity onPress={handleForgotPassword}>
+        {/* <TouchableOpacity onPress={handleForgotPassword}>
           <Text style={styles.link}>Quên mật khẩu?</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         <TouchableOpacity onPress={() => navigation.navigate("RegisterScreen")}>
           <Text style={styles.link}>Chưa có tài khoản? Đăng ký</Text>

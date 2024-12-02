@@ -4,20 +4,26 @@ import {
   View,
   Text,
   TextInput,
-  StyleSheet,
   TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Modal,
+  Button,
+  Linking,
 } from "react-native";
+import { styles } from "./style";
 import Header from "../../components/header";
 import { Ionicons } from "@expo/vector-icons";
 import { createTicket } from "./ticketmodel"; // Import hàm API
 import { getPromotionByCode } from "./ticketmodel"; // Import hàm API
-
+import { StackNavigationProp } from "@react-navigation/stack";
+import { useNavigation } from "@react-navigation/native"; // Thêm import useNavigation
+import { RootStackParamList } from "../App.TicketBookingScreen/index";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 const ConfirmInformation: React.FC = ({ route }: any) => {
-  const { selectedSeats, trip, seatCapacity } = route.params;
-
-  console.log(selectedSeats);
-  console.log(trip);
-
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+  const { selectedSeats, trip } = route.params;
   // State để lưu giá trị input
   const [fullName, setFullName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -25,19 +31,54 @@ const ConfirmInformation: React.FC = ({ route }: any) => {
   const [discountCode, setDiscountCode] = useState("");
   const [finalDiscountValue, setFinalDiscountValue] = useState(0);
   const [isDiscountApplied, setIsDiscountApplied] = useState(false);
-
+  const [fullNameError, setFullNameError] = useState<string | null>(null);
+  const [phoneNumberError, setPhoneNumberError] = useState<string | null>(null);
+  const [showTransferInputs, setShowTransferInputs] = useState(false);
+  const [inputBoardingPoint, setInputBoardingPoint] = useState("");
+  const [inputDropOffPoint, setInputDropOffPoint] = useState("");
+  const [boardingPointError, setBoardingPointError] = useState("");
+  const [dropOffPointError, setDropOffPointError] = useState("");
+  const [showDialog, setShowDialog] = useState(false); // State để điều khiển việc hiển thị dialog
   // State để kiểm tra tính hợp lệ của số điện thoại
   const [phoneValid, setPhoneValid] = useState(true);
 
-  // Hàm kiểm tra số điện thoại hợp lệ (chỉ kiểm tra 10 chữ số và không có ký tự đặc biệt)
   const validatePhoneNumber = (number: string) => {
-    // Kiểm tra số điện thoại có 10 chữ số và không có ký tự đặc biệt
-    const regex = /^[0-9]{10}$/; // Chỉ cho phép 10 chữ số
-    if (regex.test(number)) {
-      setPhoneValid(true);
-    } else {
+    // Kiểm tra nếu số điện thoại trống (khi bấm vào nhưng không nhập gì)
+    if (!number) {
       setPhoneValid(false);
+      setPhoneNumberError("Không được bỏ trống.");
+      return;
     }
+
+    // Kiểm tra có ký tự đặc biệt không (chỉ cho phép số)
+    const specialCharRegex = /[^0-9]/;
+    if (specialCharRegex.test(number)) {
+      setPhoneValid(false);
+      setPhoneNumberError("Vui lòng không nhập ký tự đặc biệt.");
+      return;
+    }
+
+    // Kiểm tra số điện thoại có đủ 10 chữ số
+    if (number.length !== 10) {
+      setPhoneValid(false);
+      setPhoneNumberError("Số điện thoại phải có 10 chữ số.");
+      return;
+    }
+
+    // Nếu tất cả các điều kiện trên đều hợp lệ
+    setPhoneValid(true);
+    setPhoneNumberError(null); // Xóa thông báo lỗi
+  };
+  const validateFullName = (name: string) => {
+    if (!name.trim()) {
+      setFullNameError("Họ và Tên không được bỏ trống.");
+      return false;
+    } else if (name.trim().length < 3) {
+      setFullNameError("Họ và Tên phải có ít nhất 3 ký tự.");
+      return false;
+    }
+    setFullNameError(null); // Không có lỗi
+    return true;
   };
 
   // Hàm xử lý khi nhập số điện thoại
@@ -45,11 +86,9 @@ const ConfirmInformation: React.FC = ({ route }: any) => {
     setPhoneNumber(number);
     validatePhoneNumber(number); // Kiểm tra tính hợp lệ mỗi khi người dùng thay đổi
   };
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString); // Tạo đối tượng Date từ chuỗi ISO
-    const hours = date.getUTCHours().toString().padStart(2, "0"); // Lấy giờ và đảm bảo 2 chữ số
-    const minutes = date.getUTCMinutes().toString().padStart(2, "0"); // Lấy phút và đảm bảo 2 chữ số
-    return `${hours}:${minutes}`; // Trả về giờ và phút
+  const handleFullNameChange = (text: string) => {
+    setFullName(text);
+    validateFullName(text); // Kiểm tra ngay khi nhập
   };
 
   const formatDateTime = (dateString: string) => {
@@ -68,7 +107,7 @@ const ConfirmInformation: React.FC = ({ route }: any) => {
     }).format(amount);
   };
 
-  const handleDiscount = async () => {
+  /* const handleDiscount = async () => {
     if (!discountCode.trim()) {
       // Kiểm tra mã giảm giá có rỗng hay không
       alert("Vui lòng nhập mã giảm giá!"); // Hiển thị thông báo yêu cầu nhập mã
@@ -79,7 +118,7 @@ const ConfirmInformation: React.FC = ({ route }: any) => {
       const token = "người dùng của bạn"; // Thay bằng cách lấy token thực tế
       const promotionData = await getPromotionByCode(discountCode, token);
       console.log(promotionData);
-
+      // kiểm tra status của mã là gì . Nếu ACTIVE thì tiếp tục. Nếu là ... thì trả về mã đã hết hạn
       if (promotionData) {
         let discount = 0;
         if (promotionData.discountType === "AMOUNT") {
@@ -115,39 +154,43 @@ const ConfirmInformation: React.FC = ({ route }: any) => {
         alert("Đã xảy ra lỗi không xác định. Vui lòng thử lại.");
       }
     }
-  };
+  }; */
 
-  const handleRemoveDiscount = () => {
-    setIsDiscountApplied(false); // Hủy mã giảm giá
-    setDiscountCode(""); // Xóa mã giảm giá
-    setFinalDiscountValue(0); // Reset giá trị giảm giá
-  };
+  const handleDiscount = async () => {
+    if (!discountCode.trim()) {
+      // Kiểm tra mã giảm giá có rỗng hay không
+      alert("Vui lòng nhập mã giảm giá!"); // Hiển thị thông báo yêu cầu nhập mã
+      return; // Dừng thực hiện nếu mã giảm giá trống
+    }
 
-  const Handlesticketcreation = async () => {
     try {
-      // Dữ liệu gửi tới API
-      const ticketData = {
-        customerPhone: phoneNumber,
-        customerName: fullName,
-        note,
-        trip: trip._id, // ID chuyến xe
-        seatNumber: selectedSeats, // Danh sách ghế
-        boardingPoint: trip.route.startDistrict,
-        dropOffPoint: trip.route.endDistrict,
-        discountCode, // Mã giảm giá
-      };
-
-      // Token người dùng (giả sử đã lưu trong AsyncStorage hoặc context)
       const token = "người dùng của bạn"; // Thay bằng cách lấy token thực tế
+      const promotionData = await getPromotionByCode(discountCode, token);
+      console.log(promotionData);
 
-      // Gọi API
-      const response = await createTicket(ticketData, token);
+      if (promotionData) {
+        // Kiểm tra status của mã giảm giá
+        if (promotionData.status !== "ACTIVE") {
+          // Nếu status không phải là ACTIVE, hiển thị thông báo mã hết hạn
+          alert("Mã giảm giá đã hết hạn");
+          return; // Dừng tiếp tục thực hiện nếu mã giảm giá không hợp lệ
+        }
 
-      console.log(response);
+        let discount = 0;
+        // Tính giá trị giảm giá
+        if (promotionData.discountType === "AMOUNT") {
+          discount = promotionData.discountAmount;
+        } else if (promotionData.discountType === "PERCENT") {
+          discount =
+            (promotionData.discountAmount / 100) *
+            (selectedSeats.length * trip.price);
+        }
 
-      // Điều hướng người dùng về trang chính
-      // navigation.navigate("SuccessScreen"); // Điều chỉnh theo thực tế
-    } catch (error: any) {
+        setFinalDiscountValue(discount); // Lưu giá trị giảm giá vào state
+        setIsDiscountApplied(true); // Đánh dấu đã áp dụng mã giảm giá
+        console.log("Giá trị giảm giá cuối cùng: ", discount);
+      }
+    } catch (error) {
       // Kiểm tra nếu lỗi có response từ server
       if (error.response) {
         // Lỗi từ server, in ra thông báo lỗi từ server
@@ -169,343 +212,423 @@ const ConfirmInformation: React.FC = ({ route }: any) => {
       }
     }
   };
+
+  const handleRemoveDiscount = () => {
+    setIsDiscountApplied(false); // Hủy mã giảm giá
+    setDiscountCode(""); // Xóa mã giảm giá
+    setFinalDiscountValue(0); // Reset giá trị giảm giá
+  };
+
+  const validateField = (field: string, fieldName: string) => {
+    if (!field.trim()) {
+      return `${fieldName} không được bỏ trống.`;
+    }
+    return null;
+  };
+
+  const Handlesticketcreation = async () => {
+    // Reset lỗi trước khi kiểm tra
+    setBoardingPointError("");
+    setDropOffPointError("");
+    // Kiểm tra các trường và lưu thông báo lỗi vào state
+    const fullNameError = validateField(fullName, "Họ và Tên");
+    const phoneNumberError = validateField(phoneNumber, "Số điện thoại");
+
+    // Cập nhật thông báo lỗi
+    setFullNameError(fullNameError);
+    setPhoneNumberError(phoneNumberError);
+
+    // Nếu có lỗi, không tiếp tục gửi dữ liệu
+    if (fullNameError || phoneNumberError) {
+      return;
+    }
+    // Kiểm tra validate cho boardingPoint và dropOffPoint khi checkbox được tick
+    let valid = true;
+
+    // Kiểm tra validate cho boardingPoint và dropOffPoint khi checkbox được tick
+    if (showTransferInputs) {
+      // Kiểm tra nếu một trong hai ô nhập không có dữ liệu
+      if (!inputBoardingPoint) {
+        setBoardingPointError("Vui lòng nhập địa chỉ đón chi tiết.");
+        return; // Dừng lại nếu ô nhập địa chỉ đón trống
+      }
+      if (!inputDropOffPoint) {
+        setDropOffPointError("Vui lòng nhập địa chỉ trả chi tiết.");
+        return; // Dừng lại nếu ô nhập địa chỉ trả trống
+      }
+    }
+
+    if (!valid) {
+      return; // Nếu có lỗi, không tiếp tục
+    }
+    try {
+      // Xử lý giá trị của boardingPoint và dropOffPoint
+      const boardingPoint =
+        showTransferInputs && inputBoardingPoint
+          ? inputBoardingPoint
+          : trip.route.startDistrict;
+      const dropOffPoint =
+        showTransferInputs && inputDropOffPoint
+          ? inputDropOffPoint
+          : trip.route.endDistrict;
+      // Dữ liệu gửi tới API
+      const ticketData = {
+        customerPhone: phoneNumber,
+        customerName: fullName,
+        note,
+        trip: trip._id, // ID chuyến xe
+        seatNumber: selectedSeats, // Danh sách ghế
+        boardingPoint,
+        dropOffPoint,
+        discountCode: isDiscountApplied ? discountCode : "", // Mã giảm giá
+      };
+
+      // Lấy token từ AsyncStorage
+      const token = await AsyncStorage.getItem("userToken"); // 'userToken' là tên key đã lưu token
+
+      // Gọi API
+      const response = await createTicket(ticketData, token);
+      console.log(response);
+
+      // Điều hướng người dùng về trang chính
+      navigation.navigate("CreateticketsScreen", {
+        ticket: response.ticket,
+      }); // Điều chỉnh theo thực tế
+    } catch (error: any) {
+      // Kiểm tra nếu lỗi có response từ server
+      if (error.response) {
+        // Lỗi từ server, in ra thông báo lỗi từ server
+        console.error("Lỗi từ server: ", error.response.data);
+
+        // Kiểm tra và hiển thị thông báo lỗi từ hệ thống
+        const errorMessage =
+          error.response.data.message || "Đã xảy ra lỗi khi tạo vé.";
+
+        alert(`Lỗi: ${errorMessage}`);
+      } else if (error.request) {
+        // Nếu không có phản hồi từ server (lỗi mạng, timeout, v.v.)
+        console.error("Không có phản hồi từ server: ", error.request);
+        alert("Không thể kết nối đến server. Vui lòng thử lại.");
+      } else {
+        // Lỗi khác (ví dụ lỗi cú pháp hoặc lỗi không xác định)
+        console.error("Lỗi không xác định: ", error.message);
+        alert("Đã xảy ra lỗi không xác định. Vui lòng thử lại.");
+      }
+    }
+  };
   return (
-    <View style={styles.container}>
-      <Header title="Chọn ghế xe" />
-      <View style={styles.inputSection}>
-        <Text style={styles.inputTitle}>Họ và Tên</Text>
-        <View style={styles.inputWrapper}>
-          <Ionicons
-            name="person-outline"
-            size={24}
-            color="#FF6347"
-            style={styles.icon}
-          />
-          <TextInput
-            placeholder="Nhập Họ và Tên"
-            value={fullName}
-            onChangeText={setFullName}
-            autoCapitalize="words"
-          />
-        </View>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <ScrollView>
+        <View style={styles.container}>
+          <Header title="Xác nhận thông tin" />
+          <View style={styles.inputSection}>
+            <Text style={styles.inputTitle}>Họ và Tên</Text>
+            <View style={styles.inputWrapper}>
+              <Ionicons
+                name="person-outline"
+                size={24}
+                color="#005C78"
+                style={styles.icon}
+              />
+              <TextInput
+                placeholder="Nhập Họ và Tên"
+                value={fullName}
+                onChangeText={handleFullNameChange}
+                autoCapitalize="words"
+              />
+            </View>
+            {fullNameError && (
+              <Text style={styles.errorText}>{fullNameError}</Text>
+            )}
 
-        <Text style={styles.inputTitle}>Số điện thoại</Text>
-        <View style={styles.inputWrapper}>
-          <Ionicons
-            name="call-outline"
-            size={24}
-            color="#FF6347"
-            style={styles.icon}
-          />
-          <TextInput
-            style={[!phoneValid && styles.inputError]} // Thêm style lỗi nếu không hợp lệ
-            placeholder="Nhập Số điện thoại"
-            value={phoneNumber}
-            onChangeText={handlePhoneChange}
-            keyboardType="phone-pad"
-          />
-        </View>
-        {!phoneValid && (
-          <Text style={styles.errorText}>
-            Số điện thoại phải có 10 chữ số và không có ký tự đặc biệt.
-          </Text>
-        )}
+            <Text style={styles.inputTitle}>Số điện thoại</Text>
+            <View style={styles.inputWrapper}>
+              <Ionicons
+                name="call-outline"
+                size={24}
+                color="#005C78"
+                style={styles.icon}
+              />
+              <TextInput
+                style={[!phoneValid && styles.inputError]}
+                placeholder="Nhập Số điện thoại"
+                value={phoneNumber}
+                onChangeText={handlePhoneChange}
+                keyboardType="phone-pad"
+              />
+            </View>
+            {phoneNumberError && (
+              <Text style={styles.errorText}>{phoneNumberError}</Text>
+            )}
 
-        <Text style={styles.inputTitle}>Ghi chú</Text>
-        <View style={styles.inputWrapper}>
-          <Ionicons
-            name="clipboard-outline"
-            size={24}
-            color="#FF6347"
-            style={styles.icon}
-          />
-          <TextInput
-            style={[{ height: 80 }]}
-            placeholder="Nhập Ghi chú"
-            value={note}
-            onChangeText={setNote}
-            multiline
-          />
-        </View>
+            <Text style={styles.inputTitle}>Ghi chú</Text>
+            <View style={styles.inputWrapper}>
+              <Ionicons
+                name="clipboard-outline"
+                size={24}
+                color="#005C78"
+                style={styles.icon}
+              />
+              <TextInput
+                style={[{ height: 80 }]}
+                placeholder="Nhập Ghi chú"
+                value={note}
+                onChangeText={setNote}
+                multiline
+              />
+            </View>
+            {/* Trung chuyến */}
+            <View style={styles.transferCheckboxWrapper}>
+              {/* Tùy chỉnh Checkbox */}
+              <TouchableOpacity
+                style={[
+                  styles.checkbox,
+                  showTransferInputs && styles.checkboxChecked,
+                ]}
+                onPress={() => setShowTransferInputs(!showTransferInputs)}
+              >
+                {showTransferInputs && (
+                  <Ionicons name="checkmark" size={15} color="#fff" />
+                )}
+              </TouchableOpacity>
+              <Text
+                style={[
+                  styles.transferButtonText,
+                  { color: showTransferInputs ? "#86A789" : "#005C78" },
+                ]}
+              >
+                {showTransferInputs
+                  ? "Vui lòng nhập địa chỉ đón trả"
+                  : "Trung chuyển - Đón trả khách tận nơi"}
+              </Text>
+            </View>
 
-        <Text style={styles.inputTitle}>Mã giảm giá</Text>
-        <View style={styles.discountSection}>
-          <View style={styles.discountInputWrapper}>
-            <Ionicons
-              name="pricetag-outline"
-              size={24}
-              color="#FF6347"
-              style={styles.icon}
-            />
-            <TextInput
-              style={[
-                styles.discountInput,
-                isDiscountApplied && styles.discountAppliedInput,
-              ]} // Thêm style khi đã áp dụng
-              placeholder="Nhập mã giảm giá"
-              value={discountCode}
-              onChangeText={(text) => setDiscountCode(text.toUpperCase())} // Chuyển đổi thành chữ in hoa
-              editable={!isDiscountApplied} // Không cho sửa nếu mã giảm giá đã được áp dụng
-            />
+            {/* Hiển thị các trường nhập địa chỉ khi checkbox bật */}
+            {showTransferInputs && (
+              <>
+                {/* Dòng chữ "Bấm vào đây để xem thức trung chuyển" */}
+                {/* Dialog Modal */}
+                <Modal
+                  visible={showDialog}
+                  animationType="slide"
+                  transparent={true}
+                >
+                  <View style={styles.modalBackground}>
+                    <View style={styles.modalContainer}>
+                      <Text style={styles.modalTitle}>
+                        Chính sách trung chuyển
+                      </Text>
+                      <View style={styles.modalContainerCH}>
+                        <Text style={styles.modalInfo}>
+                          <Text style={styles.infoHeading}>Chi phí: </Text>
+                          Đây là dịch vụ miễn phí. Nhà xe sẽ không thu bất kỳ
+                          chi phí phát sinh nào cho chuyến xe này.
+                        </Text>
+                        <Text style={styles.modalInfo}>
+                          <Text style={styles.infoHeading}>
+                            Bán kính trung chuyển:{" "}
+                          </Text>
+                          Nhà xe sẽ trung chuyển trong bán kính{" "}
+                          <Text style={styles.highlightText}>8km</Text> kể từ
+                          bến xe.
+                        </Text>
+                        {/* Thông tin thời gian trung chuyển */}
+                        <Text style={styles.modalInfo}>
+                          <Text style={styles.infoHeading}>
+                            Thời gian trung chuyển:{" "}
+                          </Text>
+                          Nhà xe sẽ chủ động liên hệ và sắp xếp thời gian trung
+                          chuyển với bạn sau khi đặt vé
+                        </Text>
+                        <Text style={styles.modalInfo}>
+                          <Text style={styles.infoHeading}>Khiếu nại: </Text>
+                          Nếu nhân viên hay bất kỳ ai thu thêm chi phí trung
+                          chuyển của quý khách.
+                        </Text>
+                      </View>
+                      <Text style={styles.modalInfo}>
+                        <Text style={styles.infoHeading}>
+                          Vui lòng liên hệ hotine để khiếu nại
+                        </Text>
+                      </Text>
+                      <View style={styles.hotlineContainer}>
+                        <TouchableOpacity
+                          style={styles.hotlineButton}
+                          onPress={() => Linking.openURL("tel:0769861234")}
+                        >
+                          <Ionicons
+                            name="call-outline"
+                            size={20}
+                            color="#FEEE91"
+                          />
+                          <Text style={styles.hotlineText}>07.6986.1234</Text>
+                        </TouchableOpacity>
+                      </View>
+                      <Button
+                        title="Đã hiểu"
+                        onPress={() => setShowDialog(false)}
+                        color="#003161" // Đặt màu nền cho nút
+                      />
+                    </View>
+                  </View>
+                </Modal>
+                <Text style={styles.inputTitle}>Địa chỉ đón chi tiết</Text>
+                <View style={styles.inputWrapper}>
+                  <Ionicons
+                    name="navigate-outline"
+                    size={24}
+                    color="#FF6347"
+                    style={styles.icon}
+                  />
+                  <TextInput
+                    placeholder="Nhập địa chỉ đón chi tiết"
+                    value={inputBoardingPoint}
+                    onChangeText={setInputBoardingPoint}
+                    onFocus={() => setBoardingPointError("")} // Xóa thông báo lỗi khi focus vào ô nhập
+                  />
+                </View>
+                {boardingPointError ? (
+                  <Text style={styles.errorText}>{boardingPointError}</Text>
+                ) : null}
+
+                <Text style={styles.inputTitle}>Địa chỉ trả chi tiết</Text>
+                <View style={styles.inputWrapper}>
+                  <Ionicons
+                    name="location-outline"
+                    size={24}
+                    color="#FF6347"
+                    style={styles.icon}
+                  />
+                  <TextInput
+                    placeholder="Nhập địa chỉ trả chi tiết"
+                    value={inputDropOffPoint}
+                    onChangeText={setInputDropOffPoint}
+                    onFocus={() => setDropOffPointError("")} // Xóa thông báo lỗi khi focus vào ô nhập
+                  />
+                </View>
+                {dropOffPointError ? (
+                  <Text style={styles.errorText}>{dropOffPointError}</Text>
+                ) : null}
+                <TouchableOpacity onPress={() => setShowDialog(true)}>
+                  <Text style={styles.linkText}>
+                    Xem chính sách trung chuyển
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
+
+            <Text style={styles.inputTitle}>Mã giảm giá</Text>
+            <View style={styles.discountSection}>
+              <View style={styles.discountInputWrapper}>
+                <Ionicons
+                  name="pricetag-outline"
+                  size={24}
+                  color="#005C78"
+                  style={styles.icon}
+                />
+                <TextInput
+                  style={[
+                    styles.discountInput,
+                    isDiscountApplied && styles.discountAppliedInput,
+                  ]}
+                  placeholder="Nhập mã giảm giá"
+                  value={discountCode}
+                  onChangeText={(text) => setDiscountCode(text.toUpperCase())}
+                  editable={!isDiscountApplied}
+                />
+              </View>
+              <TouchableOpacity
+                style={[
+                  styles.discountButton,
+                  { backgroundColor: isDiscountApplied ? "red" : "#005C78" },
+                ]}
+                onPress={
+                  isDiscountApplied ? handleRemoveDiscount : handleDiscount
+                }
+              >
+                <Text style={[styles.discountButtonText, { color: "white" }]}>
+                  {isDiscountApplied ? "Hủy mã" : "Áp dụng mã"}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-          <TouchableOpacity
-            style={[
-              styles.discountButton,
-              { backgroundColor: isDiscountApplied ? "red" : "#005C78" }, // Nền đỏ khi Hủy mã, nền #005C78 khi Áp dụng mã
-            ]}
-            onPress={isDiscountApplied ? handleRemoveDiscount : handleDiscount}
-          >
-            <Text
-              style={[
-                styles.discountButtonText,
-                { color: "white" }, // Chữ luôn là màu trắng
-              ]}
+
+          <View style={styles.infoSection}>
+            <Text style={styles.heading}>Thông tin chuyến đi</Text>
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Thời gian xuất phát:</Text>
+              <Text style={styles.detailText}>
+                {formatDateTime(trip.departureTime)}
+              </Text>
+            </View>
+
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Chuyến xe:</Text>
+              <Text style={styles.detailText}>
+                {trip.route.startProvince} - {trip.route.endProvince}
+              </Text>
+            </View>
+
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Bến xe xuất phát:</Text>
+              <Text style={[styles.detailText]}>
+                {trip.route.startDistrict}
+              </Text>
+            </View>
+
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Bến xe đến:</Text>
+              <Text style={styles.detailText}>{trip.route.endDistrict}</Text>
+            </View>
+
+            <View style={styles.selectedSeatsGrid}>
+              <Text style={styles.label}>Ghế đã chọn {""}:</Text>
+              {selectedSeats.map((seat: any, index: any) => (
+                <View key={index} style={styles.selectedSeatBox}>
+                  <Text style={styles.selectedSeatText}>{seat}</Text>
+                </View>
+              ))}
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Tạm tính:</Text>
+              <Text style={styles.detailText}>
+                {formatCurrency(selectedSeats.length * trip.price)} VND
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Giảm giá:</Text>
+              <Text style={styles.detailText}>
+                {formatCurrency(-finalDiscountValue)} VND
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Tổng tiền thanh toán:</Text>
+              <Text style={styles.detailText}>
+                {formatCurrency(
+                  selectedSeats.length * trip.price - finalDiscountValue
+                )}{" "}
+                VND
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.confirmSection}>
+            <TouchableOpacity
+              style={styles.confirmButton}
+              onPress={() => {
+                Handlesticketcreation();
+              }}
             >
-              {isDiscountApplied ? "Hủy mã" : "Áp dụng mã"}
-            </Text>
-          </TouchableOpacity>
+              <Text style={styles.confirmButtonText}>Tạo vé</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-
-      <View style={styles.infoSection}>
-        <Text style={styles.heading}>Thông tin chuyến đi</Text>
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>Thời gian xuất phát:</Text>
-          <Text style={styles.detailText}>
-            {formatDateTime(trip.departureTime)}
-          </Text>
-        </View>
-
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>Chuyến xe:</Text>
-          <Text style={styles.detailText}>
-            {trip.route.startProvince} - {trip.route.endProvince}
-          </Text>
-        </View>
-
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>Điểm xuất phát:</Text>
-          <Text
-            style={[styles.detailText, styles.wrapText]}
-            numberOfLines={2}
-            ellipsizeMode="tail"
-          >
-            {trip.route.startDistrict}
-          </Text>
-        </View>
-
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>Điểm đến:</Text>
-          <Text style={styles.detailText}>{trip.route.endDistrict}</Text>
-        </View>
-
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>Số ghế đã chọn:</Text>
-          <Text style={styles.detailText}>{selectedSeats.join(", ")}</Text>
-        </View>
-
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>Tổng tiền thanh toán:</Text>
-          <Text style={styles.detailText}>
-            {formatCurrency(
-              selectedSeats.length * trip.price - finalDiscountValue
-            )}{" "}
-            - VND
-          </Text>
-        </View>
-      </View>
-      <View style={styles.confirmSection}>
-        <TouchableOpacity
-          style={styles.confirmButton}
-          onPress={() => {
-            Handlesticketcreation();
-          }}
-        >
-          <Text style={styles.confirmButtonText}>Confirm</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f5f5f5",
-  },
-  inputSection: {
-    margin: 20,
-    flex: 6,
-    justifyContent: "space-evenly",
-  },
-  inputTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 5,
-    color: "#333",
-  },
-  inputWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
-    flex: 1,
-    height: 45,
-    fontSize: 16,
-    paddingLeft: 10,
-    borderRadius: 8,
-    backgroundColor: "#fff",
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  icon: {
-    marginRight: 10,
-  },
-  inputError: {
-    borderColor: "red",
-  },
-  errorText: {
-    color: "red",
-    fontSize: 12,
-    marginTop: 5,
-  },
-  discountSection: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  discountInputWrapper: {
-    flexDirection: "row",
-    flex: 7,
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    paddingLeft: 10,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  discountInput: {
-    flex: 1,
-    height: 45,
-    fontSize: 16,
-    paddingLeft: 10,
-    borderWidth: 0,
-    backgroundColor: "#fff",
-    borderRadius: 8,
-  },
-  discountButton: {
-    flex: 3,
-    backgroundColor: "#FF6347",
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 8,
-    padding: 10,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
-    marginLeft: 10,
-  },
-  discountButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
-
-  selectedSeats: {
-    fontSize: 18,
-    marginVertical: 10,
-    color: "#666",
-  },
-  details: {
-    fontSize: 16,
-    marginVertical: 10,
-    color: "#999",
-  },
-  confirmSection: {
-    flex: 1,
-    margin: 20,
-    justifyContent: "center",
-  },
-  confirmButton: {
-    backgroundColor: "#32CD32",
-    padding: 15,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  confirmButtonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  infoSection: {
-    padding: 16,
-    margin: 16,
-    backgroundColor: "#f9f9f9",
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  heading: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 15,
-  },
-  infoCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-  },
-  infoRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-  },
-  boldText: {
-    fontWeight: "bold",
-    color: "#333",
-    fontSize: 16,
-  },
-  detailText: {
-    fontSize: 16,
-    color: "#666",
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#555",
-  },
-  value: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#007BFF",
-    textAlign: "right",
-  },
-  wrapText: {
-    flexWrap: "wrap", // Cho phép xuống dòng khi văn bản quá dài
-  },
-  discountAppliedInput: {
-    backgroundColor: "#f0f0f0", // Màu xám nhạt
-    color: "#555", // Màu chữ tối
-  },
-});
 
 export default ConfirmInformation;

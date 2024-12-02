@@ -12,6 +12,7 @@ import { styles } from "./style";
 import { RootStackParamList } from "../App.TicketBookingScreen/index";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { useNavigation } from "@react-navigation/native"; // Thêm import useNavigation
+import { FontAwesome } from "@expo/vector-icons"; // Import FontAwesome icons từ Expo
 
 interface Seat {
   seatNumber: string;
@@ -28,6 +29,8 @@ const SeatSelectionScreen: React.FC = ({ route }: any) => {
   // const tripId = "6737040ba5ab759d34287390";
   const { trip } = route.params;
   const tripId = trip._id;
+  console.log("Dữ liệu get được", { trip });
+
   useEffect(() => {
     const loadSeats = async () => {
       try {
@@ -193,62 +196,210 @@ const SeatSelectionScreen: React.FC = ({ route }: any) => {
     return rows;
   };
 
-  // Hàm vẽ sơ đồ ghế cho loại 16 chỗ
+  // // Hàm vẽ sơ đồ ghế cho loại 16 chỗ
+  // const render16SeatLayout = (seats: Seat[]) => {
+  //   const rows: JSX.Element[] = [];
+  //   let currentRow: JSX.Element[] = [];
+
+  //   seats.forEach((seat, index) => {
+  //     const isSelected = selectedSeats.includes(seat.seatNumber);
+
+  //     const seatView = (
+  //       <TouchableOpacity
+  //         key={index}
+  //         style={[
+  //           styles.seat,
+  //           seat.status === "EMPTY"
+  //             ? styles.availableSeat
+  //             : seat.status === "SOLD"
+  //             ? styles.soldSeat
+  //             : styles.unavailableSeat,
+  //           isSelected && styles.selectedSeat,
+  //         ]}
+  //         onPress={() => {
+  //           if (seat.status === "EMPTY") {
+  //             toggleSeatSelection(seat.seatNumber);
+  //           }
+  //         }}
+  //         disabled={seat.status === "SOLD"}
+  //       >
+  //         <Text
+  //           style={[
+  //             styles.seatText,
+  //             seat.status === "EMPTY" && !isSelected
+  //               ? styles.availableSeatText
+  //               : seat.status === "SOLD"
+  //               ? styles.soldSeatText
+  //               : isSelected
+  //               ? styles.selectedSeatText
+  //               : {},
+  //           ]}
+  //         >
+  //           {seat.seatNumber}
+  //         </Text>
+  //       </TouchableOpacity>
+  //     );
+
+  //     currentRow.push(seatView);
+
+  //     // Tạo hàng mới khi đủ 4 ghế (mỗi hàng có 4 ghế)
+  //     if ((index + 1) % 4 === 0 || index === seats.length - 1) {
+  //       rows.push(
+  //         <View style={styles.row} key={rows.length}>
+  //           {currentRow}
+  //         </View>
+  //       );
+  //       currentRow = []; // Reset currentRow để tạo hàng mới
+  //     }
+  //   });
+
+  //   return rows;
+  // };
   const render16SeatLayout = (seats: Seat[]) => {
     const rows: JSX.Element[] = [];
-    let currentRow: JSX.Element[] = [];
+    let seatIndex = 0; // Biến đếm để lấy số thứ tự từ `seats`
 
-    seats.forEach((seat, index) => {
-      const isSelected = selectedSeats.includes(seat.seatNumber);
+    // Hàng 1: Vị trí tài xế và 2 ghế
+    rows.push(
+      <View style={styles.row} key="row-1">
+        <View style={[styles.driverSeat]}>
+          <Text style={styles.driverSeatText}>Tài xế</Text>
+        </View>
+        {seats.slice(seatIndex, seatIndex + 2).map((seat, index) => {
+          seatIndex++; // Cập nhật chỉ số ghế
+          const isSelected = selectedSeats.includes(seat.seatNumber);
+          return (
+            <TouchableOpacity
+              key={`seat-${seat.seatNumber}`}
+              style={[
+                styles.seat,
+                seat.status === "EMPTY"
+                  ? styles.availableSeat
+                  : seat.status === "SOLD"
+                  ? styles.soldSeat
+                  : styles.unavailableSeat,
+                isSelected && styles.selectedSeat,
+              ]}
+              onPress={() => {
+                if (seat.status === "EMPTY") {
+                  toggleSeatSelection(seat.seatNumber);
+                }
+              }}
+              disabled={seat.status === "SOLD"}
+            >
+              <Text
+                style={[
+                  styles.seatText,
+                  seat.status === "EMPTY" && !isSelected
+                    ? styles.availableSeatText
+                    : seat.status === "SOLD"
+                    ? styles.soldSeatText
+                    : isSelected
+                    ? styles.selectedSeatText
+                    : {},
+                ]}
+              >
+                {seat.seatNumber}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    );
 
-      const seatView = (
-        <TouchableOpacity
-          key={index}
-          style={[
-            styles.seat,
-            seat.status === "EMPTY"
-              ? styles.availableSeat
-              : seat.status === "SOLD"
-              ? styles.soldSeat
-              : styles.unavailableSeat,
-            isSelected && styles.selectedSeat,
-          ]}
-          onPress={() => {
-            if (seat.status === "EMPTY") {
-              toggleSeatSelection(seat.seatNumber);
-            }
-          }}
-          disabled={seat.status === "SOLD"}
-        >
-          <Text
-            style={[
-              styles.seatText,
-              seat.status === "EMPTY" && !isSelected
-                ? styles.availableSeatText
-                : seat.status === "SOLD"
-                ? styles.soldSeatText
-                : isSelected
-                ? styles.selectedSeatText
-                : {},
-            ]}
-          >
-            {seat.seatNumber}
-          </Text>
-        </TouchableOpacity>
+    // Hàng 2 - 4: 3 ghế bên trái, 1 ô trống bên phải
+    for (let row = 1; row <= 3; row++) {
+      rows.push(
+        <View style={styles.row} key={`row-${row + 1}`}>
+          {seats.slice(seatIndex, seatIndex + 3).map((seat, index) => {
+            seatIndex++; // Cập nhật chỉ số ghế
+            const isSelected = selectedSeats.includes(seat.seatNumber);
+            return (
+              <TouchableOpacity
+                key={`seat-${seat.seatNumber}`}
+                style={[
+                  styles.seat,
+                  seat.status === "EMPTY"
+                    ? styles.availableSeat
+                    : seat.status === "SOLD"
+                    ? styles.soldSeat
+                    : styles.unavailableSeat,
+                  isSelected && styles.selectedSeat,
+                ]}
+                onPress={() => {
+                  if (seat.status === "EMPTY") {
+                    toggleSeatSelection(seat.seatNumber);
+                  }
+                }}
+                disabled={seat.status === "SOLD"}
+              >
+                <Text
+                  style={[
+                    styles.seatText,
+                    seat.status === "EMPTY" && !isSelected
+                      ? styles.availableSeatText
+                      : seat.status === "SOLD"
+                      ? styles.soldSeatText
+                      : isSelected
+                      ? styles.selectedSeatText
+                      : {},
+                  ]}
+                >
+                  {seat.seatNumber}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+          {/* Ô trống bên phải */}
+          <View style={styles.emptySpace}></View>
+        </View>
       );
+    }
 
-      currentRow.push(seatView);
-
-      // Tạo hàng mới khi đủ 4 ghế (mỗi hàng có 4 ghế)
-      if ((index + 1) % 4 === 0 || index === seats.length - 1) {
-        rows.push(
-          <View style={styles.row} key={rows.length}>
-            {currentRow}
-          </View>
-        );
-        currentRow = []; // Reset currentRow để tạo hàng mới
-      }
-    });
+    // Hàng 5: 4 ghế
+    rows.push(
+      <View style={styles.row} key="row-5">
+        {seats.slice(seatIndex, seatIndex + 4).map((seat, index) => {
+          seatIndex++; // Cập nhật chỉ số ghế
+          const isSelected = selectedSeats.includes(seat.seatNumber);
+          return (
+            <TouchableOpacity
+              key={`seat-${seat.seatNumber}`}
+              style={[
+                styles.seat,
+                seat.status === "EMPTY"
+                  ? styles.availableSeat
+                  : seat.status === "SOLD"
+                  ? styles.soldSeat
+                  : styles.unavailableSeat,
+                isSelected && styles.selectedSeat,
+              ]}
+              onPress={() => {
+                if (seat.status === "EMPTY") {
+                  toggleSeatSelection(seat.seatNumber);
+                }
+              }}
+              disabled={seat.status === "SOLD"}
+            >
+              <Text
+                style={[
+                  styles.seatText,
+                  seat.status === "EMPTY" && !isSelected
+                    ? styles.availableSeatText
+                    : seat.status === "SOLD"
+                    ? styles.soldSeatText
+                    : isSelected
+                    ? styles.selectedSeatText
+                    : {},
+                ]}
+              >
+                {seat.seatNumber}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    );
 
     return rows;
   };
@@ -267,7 +418,13 @@ const SeatSelectionScreen: React.FC = ({ route }: any) => {
                   {/* Khối A */}
                   <View style={styles.block}>
                     <View style={styles.grayBox}>
-                      <Text style={styles.driverText}>Tài xế</Text>
+                      <FontAwesome
+                        name="user-circle"
+                        size={20}
+                        color="#FEF3E2"
+                        style={styles.icon}
+                      />
+                      <Text style={styles.driverText}>Vị trí tài xế</Text>
                     </View>
                     {render36SeatLayout(seats.slice(0, seats.length / 2))}
                     <Text style={styles.blockTitle}>Tầng 1</Text>
@@ -276,7 +433,15 @@ const SeatSelectionScreen: React.FC = ({ route }: any) => {
                   <View style={styles.verticalDivider} />
                   {/* Khối B */}
                   <View style={styles.block}>
-                    <View style={styles.grayBox}></View>
+                    <View style={styles.grayBox}>
+                      <FontAwesome
+                        name="sign-out"
+                        size={20}
+                        color="#FEF3E2"
+                        style={styles.icon}
+                      />
+                      <Text style={styles.driverText}>Cửa ra - vào</Text>
+                    </View>
                     {render36SeatLayout(seats.slice(seats.length / 2))}
                     <Text style={styles.blockTitle}>Tầng 2</Text>
                   </View>
@@ -297,7 +462,14 @@ const SeatSelectionScreen: React.FC = ({ route }: any) => {
                   {/* Khối A */}
                   <View style={styles.block}>
                     <View style={styles.grayBox}>
-                      <Text style={styles.driverText}>Tài xế</Text>
+                      <FontAwesome
+                        name="user-circle"
+                        size={20}
+                        color="#FEF3E2"
+                        style={styles.icon}
+                      />
+
+                      <Text style={styles.driverText}>Vị trí Tài xế</Text>
                     </View>
                     {render24SeatLayout(seats.slice(0, seats.length / 2))}
                     <Text style={styles.blockTitle}>Tầng 1</Text>
@@ -306,7 +478,15 @@ const SeatSelectionScreen: React.FC = ({ route }: any) => {
                   <View style={styles.verticalDivider} />
                   {/* Khối B */}
                   <View style={styles.block}>
-                    <View style={styles.grayBox}></View>
+                    <View style={styles.grayBox}>
+                      <FontAwesome
+                        name="sign-out"
+                        size={20}
+                        color="#FEF3E2"
+                        style={styles.icon}
+                      />
+                      <Text style={styles.driverText}>Cửa ra - vào</Text>
+                    </View>
                     {render24SeatLayout(seats.slice(seats.length / 2))}
                     <Text style={styles.blockTitle}>Tầng 2</Text>
                   </View>
@@ -326,7 +506,7 @@ const SeatSelectionScreen: React.FC = ({ route }: any) => {
           >
             <View style={styles.blockContainer16}>
               {/* Khối A */}
-              <View style={styles.block}>
+              <View style={styles.block16}>
                 <Text style={styles.blockTitle}></Text>
                 {render16SeatLayout(seats.slice(0))}
               </View>
@@ -357,7 +537,7 @@ const SeatSelectionScreen: React.FC = ({ route }: any) => {
 
   return (
     <ScrollView style={styles.container}>
-      <Header title="Chọn ghế xe" />
+      <Header title="Chọn ghế ngồi" />
       {loading ? <Text>Đang tải dữ liệu...</Text> : renderSeatLayout(seats)}
 
       {/* Hiển thị các ô màu với chú thích */}
@@ -413,7 +593,7 @@ const SeatSelectionScreen: React.FC = ({ route }: any) => {
         </Text>
       </View>
 
-      <Text>id chuyến xe: {tripId}</Text>
+      {/* <Text>id chuyến xe: {tripId}</Text> */}
       {/* Nút bấm "Xác nhận đặt ghế" */}
       <View style={styles.buttonContainer}>
         <TouchableOpacity

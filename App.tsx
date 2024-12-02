@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { useNavigation } from "@react-navigation/native"; // Import useNavigation hook
 import Icon from "react-native-vector-icons/MaterialIcons";
 import SplashScreen from "./src/screens/auth/splash";
 import LoginScreen from "./src/screens/auth/SignIn";
@@ -15,10 +16,10 @@ import SeatSelectionScreen from "./src/screens/SeatSelectionScreen/SeatSelection
 import PickupDropoffScreen from "./src/screens/App.PickupDropoffScreen";
 import PassengerInfoScreen from "./src/screens/App.PassengerInfoScreen";
 import PaymentScreen from "./src/screens/App.PaymentScreen";
-import TicketDetail from "./src/screens/app/Tickets/TicketDetail";
 import OtpScreen from "./src/screens/auth/OTP";
 import BankTransferScreen from "./src/screens/App.PaymentScreen/PaymentTransfer";
 import ConfirmInformation from "./src/screens/ConfirmInformationScreen/ConfirmInformationScreen";
+import CreateticketsScreen from "./src/screens/CreateticketsScreen/CreateticketsScreen";
 // RootStackParamList.ts
 export type RootStackParamList = {
   SplashScreen: undefined;
@@ -107,6 +108,10 @@ const App: React.FC = () => {
         <Stack.Screen
           name="ConfirmInformation"
           component={ConfirmInformation} // Thêm màn hình ConfirmInformation vào đây
+        />
+        <Stack.Screen
+          name="CreateticketsScreen"
+          component={CreateticketsScreen}
         />
         <Stack.Screen
           name="PickupDropoffScreen"
